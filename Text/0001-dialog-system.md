@@ -97,7 +97,7 @@ OpenNefia.Prototypes.Elona.Dialog.MyMod.Test =
 }
 ```
 
-Finally, add a `Dialog` component to the appropriate `Chara` prototype:
+Finally, add a `Dialog` component to the appropriate `Entity` prototype:
 
 ```yaml
 - type: Entity
@@ -437,6 +437,8 @@ Each feature of this system is required in order to address a specific need that
 [unresolved-questions]: #unresolved-questions
 
 - What will the `require()` path namespacing look like for Lua dialog libraries?
+- How will dialog objects play with external node references? The dialog object is meant to be a singleton and local only to the dialog that instantiates it. This can potentially create a dependency on that type of dialog object from within scripted callback events (`ctxt.obj:Method()`).
+- To what extent will this system overlap with the future custom talk system? With the cutscene system?
 
 # Future possibilities
 [future-possibilities]: #future-possibilities
