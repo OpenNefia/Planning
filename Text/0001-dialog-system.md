@@ -1,7 +1,7 @@
 - Feature Name: `dialog_system`
 - Start Date: 2022-02-23
-- RFC PR: [OpenNefia/Planning#0000](https://github.com/OpenNefia/Planning/pull/0000)
-- OpenNefia Issue: [OpenNefia/OpenNefia#0000](https://github.com/OpenNefia/OpenNefia/issues/0000)
+- RFC PR: [OpenNefia/Planning#1](https://github.com/OpenNefia/Planning/pull/1)
+- OpenNefia Issue: (TBA)
 
 # Summary
 [summary]: #summary
