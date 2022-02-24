@@ -52,7 +52,7 @@ First, define a new `Dialog` prototype.
   - !type:TextNode
     id: Start
     choices:
-    # '@' means to use the dialog protoype's root locale namespace
+    # '@' means to use the locale namespace of the dialog node.
     # This expands to 'OpenNefia.Prototypes.Elona.Dialog.MyMod.Test.Start.Choices.NeverMind'
     - target: Okay
       key: @Choices.Okay
@@ -97,7 +97,7 @@ OpenNefia.Prototypes.Elona.Dialog.MyMod.Test =
 }
 ```
 
-Finally, add a `Dialog` to the appropriate `Chara` prototype:
+Finally, add a `Dialog` component to the appropriate `Chara` prototype:
 
 ```yaml
 - type: Entity
@@ -163,7 +163,7 @@ OpenNefia.Prototypes.Elona.Dialog.MyMod.Test =
 {
     Start = {
         "Some dialog text.",
-        { type = "PlaySound", id = "Elona.Heal1" },
+        { type = "PlaySoundCallback", id = "Elona.Heal1" },
         "More dialog text.",
         { 
             type = "SetFlagCallback", 
@@ -207,7 +207,7 @@ public class TestDialogObject : IDialogObject
     [Dependency] private readonly IEntityGen _gen = default!;
     
     [DataField]
-    public int PutitCount { get; set; } = 1
+    public int PutitCount { get; set; } = 1;
     
     [DialogCallback]
     public void SpawnPutits(IDialogContext context) 
@@ -306,6 +306,9 @@ public class CheckForItemNode : IDialogNode
     [Dependency] private readonly IInventorySystem _invSys = default!;
     
     [DataField]
+    public DialogNodeId Id { get; set; } = default!;
+    
+    [DataField]
     public PrototypeId<EntityPrototype> ItemId { get; set; } = default!;
     
     [DataField]
@@ -398,14 +401,14 @@ No real drawbacks, since this is a core vanilla feature.
 
 ## Languages
 
-There are three languages that can be as part of this system: YAML, Lua and optionally C#. Why not remove the C# requirement, in order to let modders script dialog logic without a compiler?
+There are three languages that can used as part of this system: YAML, Lua and optionally C#. Why not remove the C# requirement, in order to let modders script dialog logic without a compiler?
 
-- It fragments the modding system across the Lua and C# boundary. 
+- It fragments the modding system across the Lua and C# boundary. Ideally, new game logic should be defined solely in terms of C# to begin with, from which components useable from YAML and Lua contexts can be created.
 - Modders wanting to reuse dialog components may have to reimplement things in C# if they are defined solely in Lua. 
 - C#'s type system improves the robustness of the final code.
-- C# is necessary to interface with YAML at a certain level, so letting modders use it is better for ergonomics. It's also possible to have external mods that provide new dialog system types so that modders can reuse them without needing to compile anything.
+- C# is necessary to interface with YAML at a certain level. It's also possible to have external mods that provide new dialog system types so that modders can reuse them without needing to compile anything.
 
-Using Lua for the locale environment was intended as a compromise to allow for string manipulation and common dialog functions. As with later versions of C++, the way Lua is used is intended to be a small subset that looks more like a data declaration language than for actual scripting.
+Using Lua for the locale environment was intended as a compromise to allow for string manipulation and common dialog functions. Lua usage in OpenNefia is intended to be limited to a small subset intended for data declaration, rather than scripting.
 
 The convention proposed here is that Lua functions should only be used for purposes of string interpolation, and everything else should be handled by dialog callbacks in C#. There is ultimately nothing stopping modders from breaking those conventions, but this implementation leaves enough flexibility so that vanilla's dialog can be ported over in full.
 
@@ -413,12 +416,12 @@ The convention proposed here is that Lua functions should only be used for purpo
 
 Each feature of this system is required in order to address a specific need that arises from porting vanilla's dialog system:
 
-- *Dialog callbacks*: Vanilla's dialog logic contains dozens of instances where arbitrary logic can be run upon entering a dialog node, such as updating sidequest progress. Some of this logic is shared across multiple different dialog definitions, so it would make sense to encapsulate these with classes. With enough of these callbacks defined, as well as composite callbacks, it would be possible to implement complicated dialog logic entirely in YAML without the use of compiled code, which is very convenient for modders.
-- *Dialog objects*: Other parts of the dialog logic are one-off and cannot be reused. As such, it makes sense to put these functions in a place specific to that dialog only. Since functions cannot be declared in YAML, the next best place would be C#, as it is fully typed.
-- *Custom dialog nodes*: Sometimes vanilla's dialog logic will use custom branching that can't be represented as a simple list of choices. Examples include the check for blue capsule drags with the \<Kaneda Bike\>'s dialog.
-- *External node references*: They're necessary to implement character roles, which can add new dialog options to NPCs.
-- *Dialog callbacks in Lua*: Vanilla's dialog logic sometimes puts arbitary logic between the lines of text of a large node. The only way around this would be to split up each node at every point a callback is used, but this makes the overall flow of the dialog graph confusing to follow since the structure of the Lua code depends on the logical structure of the YAML.
-- *Lua dialog libraries*: The text is defined in Lua, so there has to be a way of getting data from the C# runtime into Lua. The only practical way to do this is by using functions.
+- **Dialog callbacks**: Vanilla's dialog logic contains dozens of instances where arbitrary logic can be run upon entering a dialog node, such as updating sidequest progress. Some of this logic is shared across multiple different dialog definitions, so it would make sense to encapsulate these with classes. With enough of these callbacks defined, as well as composite callbacks, it would be possible to implement complicated dialog logic entirely in YAML without the use of compiled code, which is very convenient for modders.
+- **Dialog objects**: Other parts of the dialog logic are one-off and cannot be reused. As such, it makes sense to put these functions in a place specific to that dialog only. Since functions cannot be declared in YAML, the next best place would be C#, as it is fully typed.
+- **Custom dialog nodes**: Sometimes vanilla's dialog logic will use custom branching that can't be represented as a simple list of choices. Examples include the check for blue capsule drags with the \<Kaneda Bike\>'s dialog.
+- **External node references**: They're necessary to implement character roles, which can add new dialog options to NPCs.
+- **Dialog callbacks in Lua**: Vanilla's dialog logic sometimes puts arbitary logic between the lines of text of a large node. The only way around this would be to split up each node at every point a callback is used, but this makes the overall flow of the dialog graph confusing to follow since the structure of the Lua code depends on the logical structure of the YAML.
+- **Lua dialog libraries**: The text is defined in Lua, so there has to be a way of getting data from the C# runtime into Lua. The most practical way to do this is by using functions. State could be kept in the dialog context, but having more mutable state makes things more confusing, there's no supported use-case for mutating that state from Lua, and the data that's usually needed (like player name) can easily be retrieved with functions instead.
 
 # Prior art
 [prior-art]: #prior-art
@@ -426,7 +429,7 @@ Each feature of this system is required in order to address a specific need that
 - ON/Lua has [its own dialog system](https://github.com/Ruin0x11/OpenNefia/blob/develop/src/mod/elona_sys/dialog/api/Dialog.lua), although the amount of magic is uses owing to dynamic typing is significant, leading to a lack of maintainability. 
   + Its [node format](https://github.com/Ruin0x11/OpenNefia/blob/develop/src/mod/elona/data/dialog/unique/lomias.lua) opts for putting the locale keys inline with the rest of the definition, instead of having text lines of text intuited based on the number of entries in the array-like part of the locale table. I found this too verbose, and it also forced all translations to have the same number of lines for each node, even if that were impractical.
   + The system of defining logic inline as callbacks worked well at the time, but this was only practical because of dynamic typing and the definition system being part of a Turing-complete language instead of a data serialization format like YAML.
-  + There were several different ways of defining nodes based on how the data was shaped. One example is the ability to have `text` fields defined as single strings or functions that returned strings instead of just lists. This was changed in this proposal to reduce confusion and provide just a fwe blessed ways of defining things.
+  + There were several different ways of defining nodes based on how the data was shaped. One example is the ability to have `text` fields defined as single strings or functions that returned strings instead of just lists. This was changed in this proposal to reduce confusion and provide just a few blessed ways of defining things.
 - C:DDA has a dialog system implemented in JSON, but the node types they offer are hardcoded.
 - [Ink](https://www.inklestudios.com/ink/) is a specialized language for this purpose. However, its implementation is too general for a project with specific needs like OpenNefia, and it uses its own bespoke syntax.
 
