@@ -160,18 +160,18 @@ public sealed class ZoneRanchSystem : EntitySystem
 
     private void HandleMonthsPassed(EntityUid uid, MapComponent mapComp, ref MapOnMonthsPassedEvent args)
     {
-        for (var i = 0; i < args.MonthsPassed; i++) 
+        foreach (var zone in _zoneManager.AllZones.Where(zone => EntityManager.HasComponent<ZoneRanchComponent>(zone.Owner))) 
         {
-            foreach (var _zoneManager.AllZones.Where(zone => EntityManager.HasComponent<ZoneRanchComponent>(zone.Owner))) 
+            var ranch = EntityManager.GetComponent<ZoneRanchComponent>(zone.Owner);
+
+            // Load the map containing the active breeder entity.
+            using (var handle = _mapManager.LoadMapTemporary(zone.MapId))
             {
-                var ranch = EntityManager.GetComponent<ZoneRanchComponent>(zone.Owner);
+                var meta = EntityManager.GetComponent<MetaDataComponent>(ranch.ActiveBreeder.Value);
+                var spatial = EntityManager.GetComponent<SpatialComponent>(ranch.ActiveBreeder.Value);
 
-                // Load the map containing the active breeder entity.
-                using (var handle = _mapManager.LoadMapTemporary(zone.MapId))
+                for (var i = 0; i < args.MonthsPassed; i++) 
                 {
-                    var meta = EntityManager.GetComponent<MetaDataComponent>(ranch.ActiveBreeder.Value);
-                    var spatial = EntityManager.GetComponent<SpatialComponent>(ranch.ActiveBreeder.Value);
-
                     if (_random.OneIn(50)) 
                     {
                         if (EntityManager.IsAlive(ranch.ActiveBreeder) && meta.EntityPrototype != null) 
@@ -190,7 +190,7 @@ public sealed class ZoneRanchSystem : EntitySystem
 # Reference-level explanation
 [reference-level-explanation]: #reference-level-explanation
 
-Zones are entities that are created in the global map (ID -1), such that they can be referenced at any point during gameplay.
+Zones are entities that are created in the global map (ID `-1`), such that they can be referenced at any point during gameplay.
 
 `ZoneComponent` would be defined like so:
 
@@ -247,6 +247,12 @@ public sealed class MapGenZone
     /// The tiles this zone will encompass in the map.
     /// </summary>
     public HashSet<Vector2i> Tiles { get; } = new();
+    
+    /// <summary>
+    /// True if the zone has been generated already. Set after the map is generated
+    /// for the first time.
+    /// </summary>
+    public bool IsGenerated { get; set; } = false;
 }
 ```
 
